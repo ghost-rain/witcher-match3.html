@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Геральт: Знаки Судьбы | Witcher Match-3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Press+Start+2P&display=swap');
+
+  :root {
+    --gold: #c9a84c;
+    --dark-gold: #7a5c1e;
+    --blood: #8b1a1a;
+    --deep: #0a0a12;
+    --panel: #11111e;
+    --border: #2e2740;
+    --text: #e8d9a0;
+    --dim: #6b5f3e;
+    --green: #2d5a1b;
+    --green-bright: #5aab2e;
+    --purple: #4a1a6b;
+    --purple-bright: #a040e0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
+
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: 'Press Start 2P', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Pixel stars background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 15%, #fff6 0%, transparent 0%),
+      radial-gradient(1px 1px at 25% 40%, #fff4 0%, transparent 0%),
+      radial-gradient(1px 1px at 50% 10%, #fff7 0%, transparent 0%),
+      radial-gradient(1px 1px at 70% 25%, #fff5 0%, transparent 0%),
+      radial-gradient(1px 1px at 85% 55%, #fff3 0%, transparent 0%),
+      radial-gradient(1px 1px at 15% 70%, #fff4 0%, transparent 0%),
+      radial-gradient(1px 1px at 40% 80%, #fff5 0%, transparent 0%),
+      radial-gradient(1px 1px at 90% 85%, #fff3 0%, transparent 0%),
+      radial-gradient(1px 1px at 60% 65%, #fff4 0%, transparent 0%),
+      radial-gradient(2px 2px at 35% 55%, #c9a84c44 0%, transparent 0%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Fog effect */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, #1a0a2e44 0%, transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    display: flex; gap: 16px;
+    align-items: flex-start;
+    padding: 12px;
+    max-width: 720px;
+    width: 100%;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 10px;
+    position: relative; z-index: 1;
+  }
+  .header h1 {
+    font-size: 11px;
+    color: var(--gold);
+    text-shadow: 0 0 12px #c9a84c88, 2px 2px 0 #000;
+    letter-spacing: 2px;
+    line-height: 1.6;
+  }
+  .header .subtitle {
+    font-size: 6px;
+    color: var(--dim);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* Left panel */
+  .sidebar {
+    display: flex; flex-direction: column; gap: 10px;
+    min-width: 140px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    padding: 10px 8px;
+    position: relative;
+  }
+  .panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    border: 1px solid #ffffff08;
+    pointer-events: none;
+  }
+  .panel-title {
+    font-size: 6px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+
+  /* Score */
+  .score-val {
+    font-size: 14px;
+    color: #fff;
+    text-shadow: 0 0 8px var(--gold);
+  }
+  .score-label { font-size: 5px; color: var(--dim); margin-top: 2px; }
+
+  /* Vitality bar */
+  .bar-wrap { margin: 4px 0; }
+  .bar-label { font-size: 5px; color: var(--dim); margin-bottom: 3px; }
+  .bar-outer {
+    height: 10px;
+    background: #111;
+    border: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .bar-inner {
+    height: 100%;
+    transition: width 0.4s;
+    position: relative;
+  }
+  .bar-inner::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.2);
+  }
+  .bar-hp .bar-inner { background: linear-gradient(90deg, #6b0000, #cc2222); }
+  .bar-xp .bar-inner { background: linear-gradient(90deg, #1a4a00, #3aaa00); }
+
+  /* Signs legend */
+  .signs-list { display: flex; flex-direction: column; gap: 5px; }
+  .sign-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 5px; color: var(--dim);
+  }
+  .sign-icon {
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* Moves */
+  .moves-val { font-size: 20px; color: var(--gold); text-shadow: 0 0 8px #c9a84c; }
+  .moves-label { font-size: 5px; color: var(--dim); margin-top: 2px; }
+
+  /* Level */
+  .level-val { font-size: 12px; color: var(--purple-bright); }
+
+  /* Board area */
+  .board-area { flex: 1; }
+
+  .board-wrapper {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    padding: 8px;
+    position: relative;
+  }
+  /* Corner ornaments */
+  .board-wrapper::before, .board-wrapper::after {
+    content: '✦';
+    position: absolute;
+    color: var(--dark-gold);
+    font-size: 10px;
+    top: 3px;
+  }
+  .board-wrapper::before { left: 5px; }
+  .board-wrapper::after { right: 5px; }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 3px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .cell {
+    width: 46px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    background: #0d0d1a;
+    border: 1px solid #1a1a2e;
+    transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
+    position: relative;
+    user-select: none;
+  }
+  .cell:hover { background: #181828; border-color: var(--border); }
+  .cell.selected {
+    background: #1e1a30;
+    border-color: var(--gold);
+    box-shadow: 0 0 8px var(--gold), inset 0 0 6px rgba(201,168,76,0.15);
+    transform: scale(1.08);
+    z-index: 2;
+  }
+  .cell.matched {
+    animation: matchFlash 0.35s ease-out forwards;
+  }
+  .cell.dropping {
+    animation: dropIn 0.25s ease-out;
+  }
+
+  @keyframes matchFlash {
+    0%   { transform: scale(1.2); background: rgba(255,220,80,0.4); opacity: 1; }
+    60%  { transform: scale(0.6); opacity: 0.5; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+  @keyframes dropIn {
+    from { transform: translateY(-30px); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.25s; }
+
+  /* Message overlay */
+  #message {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    color: var(--gold);
+    text-shadow: 0 0 12px var(--gold), 2px 2px 0 #000;
+    background: rgba(0,0,0,0.55);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    letter-spacing: 1px;
+    text-align: center;
+    z-index: 10;
+  }
+  #message.show { opacity: 1; }
+
+  /* Combo display */
+  #combo-display {
+    text-align: center;
+    height: 20px;
+    margin-top: 4px;
+    font-size: 8px;
+    color: var(--gold);
+    text-shadow: 0 0 8px var(--gold);
+    transition: opacity 0.4s;
+    opacity: 0;
+  }
+  #combo-display.show { opacity: 1; }
+
+  /* Buttons */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 8px 4px;
+    background: #0d0d1a;
+    border: 2px solid var(--dark-gold);
+    color: var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 1px;
+    transition: background 0.15s, box-shadow 0.15s;
+    margin-top: 4px;
+  }
+  .btn:hover {
+    background: #1a1428;
+    box-shadow: 0 0 8px var(--dark-gold);
+    border-color: var(--gold);
+  }
+  .btn:active { transform: scale(0.97); }
+
+  /* Game over screen */
+  #gameover {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 100;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  #gameover.show { display: flex; }
+  #gameover h2 { font-size: 14px; color: var(--blood); text-shadow: 0 0 20px #ff0000; }
+  #gameover .final-score { font-size: 10px; color: var(--gold); }
+  #gameover .quote { font-size: 6px; color: var(--dim); max-width: 300px; line-height: 1.8; margin-top: 4px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--deep); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Mobile */
+  @media (max-width: 620px) {
+    .container { flex-direction: column; align-items: center; gap: 8px; }
+    .sidebar { flex-direction: row; flex-wrap: wrap; min-width: unset; width: 100%; }
+    .panel { flex: 1; min-width: 100px; }
+    .cell { width: 36px; height: 36px; font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div style="position:relative;z-index:1;width:100%;max-width:720px;padding:8px 12px 4px;">
+  <div class="header">
+    <h1>⚔ ГЕРАЛЬТ: ЗНАКИ СУДЬБЫ ⚔</h1>
+    <div class="subtitle">— witcher match-3 — 8-bit edition —</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="panel">
+      <div class="panel-title">Очки</div>
+      <div class="score-val" id="score">0</div>
+      <div class="score-label">ОРЕНЫ</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Уровень</div>
+      <div class="level-val" id="level-val">1</div>
+      <div style="font-size:5px;color:var(--dim);margin-top:2px;">ВЕДЬМАК</div>
+      <div class="bar-wrap" style="margin-top:6px;">
+        <div class="bar-label">ОПЫТ</div>
+        <div class="bar-outer"><div class="bar-inner bar-xp" id="xp-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Жизни</div>
+      <div class="bar-wrap">
+        <div class="bar-label">VITALITY</div>
+        <div class="bar-outer"><div class="bar-inner bar-hp" id="hp-bar" style="width:100%"></div></div>
+      </div>
+      <div style="font-size:5px;color:var(--dim);margin-top:4px;" id="hp-text">10 / 10</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Ходы</div>
+      <div class="moves-val" id="moves">30</div>
+      <div class="moves-label">ОСТАЛОСЬ</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Знаки</div>
+      <div class="signs-list">
+        <div class="sign-row"><div class="sign-icon">🔥</div><div>ИГНИ — огонь</div></div>
+        <div class="sign-row"><div class="sign-icon">⚡</div><div>ААРД — удар</div></div>
+        <div class="sign-row"><div class="sign-icon">🛡️</div><div>КВЕН — щит</div></div>
+        <div class="sign-row"><div class="sign-icon">🌿</div><div>ИРДЕН — ловушка</div></div>
+        <div class="sign-row"><div class="sign-icon">💜</div><div>АКСИЙ — чары</div></div>
+        <div class="sign-row"><div class="sign-icon">⚔️</div><div>МЕЧ — урон</div></div>
+        <div class="sign-row"><div class="sign-icon">🐺</div><div>ВОЛК — удача</div></div>
+        <div class="sign-row"><div class="sign-icon">💰</div><div>ОРЕН — монета</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOARD -->
+  <div class="board-area">
+    <div class="board-wrapper">
+      <div id="board"></div>
+      <div id="message"></div>
+    </div>
+    <div id="combo-display"></div>
+    <button class="btn" onclick="newGame()">⚔ НОВАЯ ИГРА</button>
+  </div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div id="gameover">
+  <div style="font-size:10px;color:var(--gold);">☠</div>
+  <h2>ГЕРАЛЬТ ПАЛ</h2>
+  <div class="final-score">Итог: <span id="final-score">0</span> оренов</div>
+  <div class="quote" id="game-quote"></div>
+  <button class="btn" style="max-width:240px;" onclick="newGame()">⚔ СЫГРАТЬ СНОВА</button>
+</div>
+
+<script>
+const COLS = 8, ROWS = 8;
+const SYMBOLS = ['🔥','⚡','🛡️','🌿','💜','⚔️','🐺','💰'];
+const NAMES = ['Игни','Аард','Квен','Ирден','Аксий','Меч','Волк','Орен'];
+const QUOTES = [
+  '"Зло существует. В мире и в каждом из нас."',
+  '"Жизнь коротка. Наслаждайся ею сейчас."',
+  '"Убийства за деньги — единственный выход."',
+  '"Нейтралитет — это иллюзия."',
+  '"Ведьмак умрёт от меча — рано или поздно."',
+];
+
+let board = [], selected = null, score = 0, moves = 30;
+let hp = 10, maxHp = 10, xp = 0, level = 1, xpToNext = 300;
+let busy = false, combo = 0;
+
+function rnd(n) { return Math.floor(Math.random() * n); }
+function randSym() { return rnd(SYMBOLS.length); }
+
+function newGame() {
+  document.getElementById('gameover').classList.remove('show');
+  score = 0; moves = 30; hp = maxHp = 10; xp = 0; level = 1; xpToNext = 300;
+  selected = null; busy = false; combo = 0;
+  board = Array.from({length: ROWS}, () => Array.from({length: COLS}, randSym));
+  // ensure no initial matches
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      while (hasMatchAt(r, c))
+        board[r][c] = randSym();
+  render(); updateUI();
+}
+
+function hasMatchAt(r, c) {
+  const v = board[r][c];
+  if (c >= 2 && board[r][c-1] === v && board[r][c-2] === v) return true;
+  if (r >= 2 && board[r-1][c] === v && board[r-2][c] === v) return true;
+  return false;
+}
+
+function render() {
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.textContent = board[r][c] !== null ? SYMBOLS[board[r][c]] : '';
+      if (selected && selected[0] === r && selected[1] === c) cell.classList.add('selected');
+      cell.addEventListener('click', () => onCellClick(r, c));
+      el.appendChild(cell);
+    }
+  }
+}
+
+function getCell(r, c) {
+  return document.querySelector(`#board .cell[data-r="${r}"][data-c="${c}"]`);
+}
+
+function onCellClick(r, c) {
+  if (busy || moves <= 0) return;
+  if (!selected) {
+    selected = [r, c];
+    render();
+    return;
+  }
+  const [sr, sc] = selected;
+  if (sr === r && sc === c) { selected = null; render(); return; }
+  // must be adjacent
+  if (Math.abs(sr - r) + Math.abs(sc - c) !== 1) {
+    selected = [r, c]; render(); return;
+  }
+  selected = null;
+  doSwap(sr, sc, r, c);
+}
+
+async function doSwap(r1, c1, r2, c2) {
+  busy = true;
+  // swap
+  let tmp = board[r1][c1]; board[r1][c1] = board[r2][c2]; board[r2][c2] = tmp;
+  render();
+  const matches = findMatches();
+  if (matches.length === 0) {
+    // swap back
+    await delay(120);
+    tmp = board[r1][c1]; board[r1][c1] = board[r2][c2]; board[r2][c2] = tmp;
+    render();
+    // shake feedback
+    [getCell(r1,c1), getCell(r2,c2)].forEach(el => { if(el){el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),300); }});
+    moves--;
+    updateUI();
+    busy = false;
+    if (moves <= 0) endGame();
+    return;
+  }
+  combo = 0;
+  moves--;
+  updateUI();
+  await processMatches();
+  busy = false;
+  if (moves <= 0 && hp > 0) endGame();
+}
+
+async function processMatches() {
+  let matches = findMatches();
+  while (matches.length > 0) {
+    combo++;
+    const pts = matches.length * 10 * combo;
+    score += pts;
+    xp += pts;
+    // damage enemy on combos
+    if (combo >= 3) { /* future: enemy hp */ }
+    showCombo(combo, pts);
+    // mark matched
+    matches.forEach(([r,c]) => {
+      const el = getCell(r,c);
+      if(el) el.classList.add('matched');
+      board[r][c] = null;
+    });
+    await delay(380);
+    await dropDown();
+    await delay(120);
+    render();
+    // apply drop animation
+    matches.forEach(([r,c]) => { const el = getCell(r,c); if(el) el.classList.add('dropping'); });
+    await delay(200);
+    checkLevelUp();
+    updateUI();
+    matches = findMatches();
+  }
+  hideCombo();
+}
+
+function findMatches() {
+  const matched = new Set();
+  // horizontal
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 2; c++) {
+      const v = board[r][c];
+      if (v !== null && board[r][c+1] === v && board[r][c+2] === v) {
+        let len = 3;
+        while (c + len < COLS && board[r][c+len] === v) len++;
+        for (let i = 0; i < len; i++) matched.add(`${r},${c+i}`);
+      }
+    }
+  }
+  // vertical
+  for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < ROWS - 2; r++) {
+      const v = board[r][c];
+      if (v !== null && board[r+1][c] === v && board[r+2][c] === v) {
+        let len = 3;
+        while (r + len < ROWS && board[r+len][c] === v) len++;
+        for (let i = 0; i < len; i++) matched.add(`${r+i},${c}`);
+      }
+    }
+  }
+  return [...matched].map(k => k.split(',').map(Number));
+}
+
+async function dropDown() {
+  for (let c = 0; c < COLS; c++) {
+    let empty = [];
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][c] === null) empty.push(r);
+      else if (empty.length > 0) {
+        board[empty.shift()][c] = board[r][c];
+        board[r][c] = null;
+        empty.push(r);
+      }
+    }
+    for (const r of empty) board[r][c] = randSym();
+  }
+}
+
+function checkLevelUp() {
+  while (xp >= xpToNext) {
+    xp -= xpToNext;
+    level++;
+    xpToNext = Math.floor(xpToNext * 1.4);
+    hp = Math.min(maxHp + 2, maxHp + 2);
+    maxHp += 2;
+    moves += 10;
+    showMessage(`✦ УРОВЕНЬ ${level}! ✦`);
+  }
+}
+
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('moves').textContent = moves;
+  document.getElementById('level-val').textContent = level;
+  document.getElementById('hp-bar').style.width = (hp / maxHp * 100) + '%';
+  document.getElementById('hp-text').textContent = `${hp} / ${maxHp}`;
+  document.getElementById('xp-bar').style.width = (xp / xpToNext * 100) + '%';
+}
+
+function showMessage(text, duration = 1200) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function showCombo(n, pts) {
+  const el = document.getElementById('combo-display');
+  if (n >= 2) {
+    el.textContent = `× ${n} COMBO  +${pts}`;
+    el.classList.add('show');
+  } else {
+    el.textContent = `+${pts}`;
+    el.classList.add('show');
+  }
+}
+function hideCombo() {
+  setTimeout(() => document.getElementById('combo-display').classList.remove('show'), 800);
+}
+
+function endGame() {
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('game-quote').textContent = QUOTES[rnd(QUOTES.length)];
+  document.getElementById('gameover').classList.add('show');
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Start
+newGame();
+</script>
+</body>
+</html>
